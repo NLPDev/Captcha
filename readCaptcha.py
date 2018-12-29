@@ -3,6 +3,7 @@
 from keras.models import load_model
 from helpers import resize_to_fit
 from imutils import paths
+from imutils import perspective
 import numpy as np
 import imutils
 import cv2
@@ -57,7 +58,28 @@ for image_file in captcha_image_files:
         # Get the rectangle that contains the contour
         (x, y, w, h) = cv2.boundingRect(contour)
 
-        cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 3)
+        # cv2.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0), 3)
+
+        peri=cv2.arcLength(contour, True)
+
+
+        box=cv2.minAreaRect(contour)
+        box=cv2.BoxPoint(box) if imutils.is_cv2() else cv2.boxPoints(box)
+
+        box=np.array(box, dtype="int")
+
+        box=perspective.order_points(box)
+
+        cv2.drawContours(im, [box.astype("int")], -1, (0, 255, 0), 2)
+
+        # approx=cv2.approxPolyDP(contour, 0.02*peri, True)
+
+        # cv2.drawContours(im, [approx], -1, (255, 0, 0), 2)
+
+
+
+        cv2.imshow("contour", im)
+        cv2.waitKey(0)
 
         # Compare the width and height of the contour to detect letters that
         # are conjoined into one chunk
@@ -80,58 +102,58 @@ for image_file in captcha_image_files:
     # if len(letter_image_regions) != 4:
     #     continue
 
-
-
-    # Sort the detected letter images based on the x coordinate to make sure
-    # we are processing them from left-to-right so we match the right image
-    # with the right letter
-    letter_image_regions = sorted(letter_image_regions, key=lambda x: x[0])
-
-    # Create an output image and a list to hold our predicted letters
-    output = cv2.merge([image] * 3)
-    predictions = []
-
-    # loop over the lektters
-    for letter_bounding_box in letter_image_regions:
-        # Grab the coordinates of the letter in the image
-        x, y, w, h = letter_bounding_box
-
-        # Extract the letter from the original image with a 2-pixel margin around the edge
-        letter_image = image[y:y + h, x:x + w+2]
-
-        cv2.imshow("letter", letter_image)
-
-
-        print(pytesseract.image_to_string(letter_image))
-
-        cv2.waitKey(0)
-
-        # Re-size the letter image to 20x20 pixels to match training data
-        letter_image = resize_to_fit(letter_image, 20, 20)
-
-        # print(pytesseract.image_to_string(letter_image))
-
-        # Turn the single image into a 4d list of images to make Keras happy
-        letter_image = np.expand_dims(letter_image, axis=2)
-        letter_image = np.expand_dims(letter_image, axis=0)
-
-        # Ask the neural network to make a prediction
-        # prediction = model.predict(letter_image)
-
-        # Convert the one-hot-encoded prediction back to a normal letter
-        # letter = lb.inverse_transform(prediction)[0]
-        # predictions.append(letter)
-
-        # draw the prediction on the output image
-        cv2.rectangle(output, (x - 2, y - 2), (x + w + 4, y + h + 4), (0, 255, 0), 1)
-        # cv2.putText(output, letter, (x - 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
-
-    # Print the captcha's text
-    # captcha_text = "".join(predictions)
-    # print("CAPTCHA text is: {}".format(captcha_text))
-
-    # Show the annotated image
-    cv2.imshow("Output", output)
-    cv2.waitKey(0)
-
+    #
+    #
+    # # Sort the detected letter images based on the x coordinate to make sure
+    # # we are processing them from left-to-right so we match the right image
+    # # with the right letter
+    # letter_image_regions = sorted(letter_image_regions, key=lambda x: x[0])
+    #
+    # # Create an output image and a list to hold our predicted letters
+    # output = cv2.merge([image] * 3)
+    # predictions = []
+    #
+    # # loop over the lektters
+    # for letter_bounding_box in letter_image_regions:
+    #     # Grab the coordinates of the letter in the image
+    #     x, y, w, h = letter_bounding_box
+    #
+    #     # Extract the letter from the original image with a 2-pixel margin around the edge
+    #     letter_image = image[y:y + h, x:x + w+2]
+    #
+    #     # cv2.imshow("letter", letter_image)
+    #
+    #
+    #     # print(pytesseract.image_to_string(letter_image))
+    #
+    #     # cv2.waitKey(0)
+    #
+    #     # Re-size the letter image to 20x20 pixels to match training data
+    #     letter_image = resize_to_fit(letter_image, 20, 20)
+    #
+    #     # print(pytesseract.image_to_string(letter_image))
+    #
+    #     # Turn the single image into a 4d list of images to make Keras happy
+    #     letter_image = np.expand_dims(letter_image, axis=2)
+    #     letter_image = np.expand_dims(letter_image, axis=0)
+    #
+    #     # Ask the neural network to make a prediction
+    #     # prediction = model.predict(letter_image)
+    #
+    #     # Convert the one-hot-encoded prediction back to a normal letter
+    #     # letter = lb.inverse_transform(prediction)[0]
+    #     # predictions.append(letter)
+    #
+    #     # draw the prediction on the output image
+    #     cv2.rectangle(output, (x - 2, y - 2), (x + w + 4, y + h + 4), (0, 255, 0), 1)
+    #     # cv2.putText(output, letter, (x - 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
+    #
+    # # Print the captcha's text
+    # # captcha_text = "".join(predictions)
+    # # print("CAPTCHA text is: {}".format(captcha_text))
+    #
+    # # Show the annotated image
+    # # cv2.imshow("Output", output)
+    # # cv2.waitKey(0)
+    #
 
